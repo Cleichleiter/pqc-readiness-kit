@@ -1,0 +1,17 @@
+org:
+  name: "ExampleOrg"
+  owner: "Security Engineering"
+  data_confidentiality_years: 10
+
+windows:
+  local_collection:
+    include_iis: true
+    include_winrm: true
+    include_openssh: true
+
+  context:
+    environment: "prod"
+    exposure: "internal"
+    roles:
+      - "windows"
+      - "server"

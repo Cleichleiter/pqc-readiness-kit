@@ -1,0 +1,28 @@
+weights:
+  pqc_relevance:
+    rsa: 25
+    ecc: 25
+    dh: 20
+    unknown_public_key: 15
+
+  hygiene:
+    sha1_signature: 40
+    weak_rsa_key: 25
+    expired_cert: 35
+    expires_soon_days: 30
+    expires_soon_score: 15
+
+  longevity:
+    enabled: true
+    years_threshold: 10
+    add_score: 20
+
+thresholds:
+  rsa_min_bits: 2048
+  expires_soon_days: 30
+
+severity_bands:
+  critical: 80
+  high: 60
+  medium: 35
+  low: 0

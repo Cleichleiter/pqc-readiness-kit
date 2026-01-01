@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PQC Readiness – Crypto Inventory",
+  "description": "Structured cryptographic inventory collected from a Windows host for post-quantum readiness analysis.",
+  "type": "object",
+  "required": ["generatedAtUtc", "org", "host", "artifacts"],
+  "properties": {
+    "generatedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "org": {
+      "type": "object",
+      "required": ["name", "owner", "dataConfidentialityYears"],
+      "properties": {
+        "name": { "type": "string" },
+        "owner": { "type": "string" },
+        "dataConfidentialityYears": { "type": "number" }
+      }
+    },
+    "host": {
+      "type": "object",
+      "required": ["computerName", "osCaption", "osVersion"],
+      "properties": {
+        "computerName": { "type": "string" },
+        "osCaption": { "type": "string" },
+        "osVersion": { "type": "string" }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "properties": {
+        "certificates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "Store": { "type": "string" },
+              "Subject": { "type": "string" },
+              "Issuer": { "type": "string" },
+              "Thumbprint": { "type": "string" },
+              "SerialNumber": { "type": "string" },
+              "NotBefore": { "type": "string" },
+              "NotAfter": { "type": "string" },
+              "PublicKeyAlgorithm": { "type": ["string", "null"] },
+              "PublicKeyBits": { "type": ["integer", "null"] },
+              "SignatureHashAlgorithm": { "type": ["string", "null"] },
+              "HasPrivateKey": { "type": "boolean" },
+              "EnhancedKeyUsages": { "type": ["string", "null"] }
+            }
+          }
+        },
+        "tlsConfig": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "iisBindings": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "winrm": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "openssh": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    }
+  }
+}

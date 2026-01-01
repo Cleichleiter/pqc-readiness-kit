@@ -1,0 +1,28 @@
+# Reports and generated outputs
+reports/*
+!reports/.gitkeep
+
+# Local working configs (keep examples committed)
+configs/targets.yml
+configs/scoring.yml
+
+# Python artifacts (if added later)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# PowerShell transient
+*.log
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# OS junk
+.DS_Store
+Thumbs.db

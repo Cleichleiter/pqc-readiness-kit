@@ -1,0 +1,38 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+
+        {
+            "name": "PowerShell: Launch Current File",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${file}",
+            "args": []
+        }
+    ]
+}
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Invoke-CryptoInventory (Repo Root)",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "${workspaceFolder}\\scripts\\pwsh\\Invoke-CryptoInventory.ps1",
+      "args": [
+        "-TargetsConfig", "${workspaceFolder}\\configs\\targets.yml",
+        "-ScoringConfig", "${workspaceFolder}\\configs\\scoring.yml",
+        "-OutputPath", "${workspaceFolder}\\reports",
+        "-IncludeIIS",
+        "-IncludeWinRM",
+        "-IncludeOpenSSH"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
+
