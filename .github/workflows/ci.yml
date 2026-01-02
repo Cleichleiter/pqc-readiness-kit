@@ -1,0 +1,47 @@
+name: CI Smoke Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Python syntax check (no execution)
+        run: |
+          python -m py_compile scripts/python/scan_tls.py
+          python -m py_compile scripts/python/build_report.py
+
+      - name: PowerShell syntax check (parse only)
+        run: |
+          pwsh -NoProfile -Command "
+            $errors = [System.Management.Automation.Language.Parser]::ParseFile(
+              'scripts/pwsh/Invoke-CryptoInventory.ps1',
+              [ref]$null,
+              [ref]$null
+            );
+            if ($errors.Count -gt 0) {
+              Write-Error 'PowerShell syntax errors detected';
+              exit 1
+            }
+          "
+
+      - name: Validate repository structure
+        run: |
+          test -d scripts/pwsh
+          test -d scripts/python
+          test -d configs
+          test -d reports
+          test -f README.md
