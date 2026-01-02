@@ -3,12 +3,12 @@ reports/*
 !reports/.gitkeep
 
 # Local working configs (keep examples committed)
-configs/targets.yml
-configs/scoring.yml
-reports/tls_scan.json
-configs/tls_targets.json
 reports/report.html
 reports/report_summary.csv
+reports/tls_scan.json
+reports/crypto_inventory.json
+reports/findings.csv
+configs/tls_targets.json
 
 
 
