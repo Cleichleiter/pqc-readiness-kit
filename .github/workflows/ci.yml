@@ -11,6 +11,7 @@ on:
 jobs:
   smoke-test:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,8 +27,21 @@ jobs:
           python -m py_compile scripts/python/build_report.py
 
       - name: PowerShell syntax check (parse only)
+        shell: pwsh
         run: |
-          pwsh -NoProfile -Command "$tokens=$null; $errors=$null; [System.Management.Automation.Language.Parser]::ParseFile('scripts/pwsh/Invoke-CryptoInventory.ps1',[ref]$tokens,[ref]$errors) | Out-Null; if ($errors -and $errors.Count -gt 0) { $errors | ForEach-Object { Write-Host $_.Message }; throw 'PowerShell parse errors detected' }"
+          $tokens = $null
+          $parseErrors = $null
+
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            'scripts/pwsh/Invoke-CryptoInventory.ps1',
+            [ref]$tokens,
+            [ref]$parseErrors
+          ) | Out-Null
+
+          if ($parseErrors -and $parseErrors.Count -gt 0) {
+            $parseErrors | ForEach-Object { Write-Host $_.Message }
+            throw 'PowerShell parse errors detected'
+          }
 
       - name: Validate repository structure
         run: |
