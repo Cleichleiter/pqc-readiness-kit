@@ -1,185 +1,109 @@
-A Windows-first, automation-focused toolkit for inventorying cryptographic dependencies and identifying post-quantum–relevant exposure.
+pqc-readiness-kit
 
-This repository is an inventory and prioritization tool, not a security control. It is designed to help organizations understand where cryptography is used today, what types of algorithms and keys are present, and which findings should be addressed immediately versus tracked for future migration planning.
+A practical, automation-first toolkit for discovering cryptographic dependencies and preparing organizations for post-quantum cryptography (PQC) migration.
+
+This repository focuses on inventory, visibility, and prioritization—not enforcement or speculative cryptographic deployment.
 
 Purpose
 
-Post-quantum readiness is fundamentally a visibility problem.
+Post-quantum readiness is primarily a data and dependency problem, not an algorithm problem.
 
-Before an organization can responsibly plan or sequence a transition to post-quantum cryptography, it must first be able to answer:
+Organizations cannot plan a responsible migration to post-quantum cryptography without first understanding:
 
-Where cryptography is in use
+Where cryptography exists
 
-Which public-key algorithms and key sizes are present
+Which systems rely on public-key algorithms
 
-Which uses are tied to long-lived confidentiality
+Which data requires long-term confidentiality
 
-Which issues represent hygiene gaps versus strategic risk
+Which dependencies are owned internally versus vendor-managed
 
-This project addresses that foundational discovery problem.
+This toolkit provides a defensible, read-only cryptographic inventory to support that planning.
 
 Design Principles
 
-Windows-first
-Focused on Windows environments using native APIs and configuration sources.
-
-Read-only execution
-No configuration changes, enforcement actions, or remediation steps are performed.
+Read-only by default
+No configuration changes, no enforcement, no credential storage.
 
 Automation-friendly
-Designed for repeatable execution and future pipeline integration.
+Scriptable, repeatable, and suitable for local execution or pipelines.
 
-Least-privilege aware
-No credential storage and minimal privilege assumptions.
+Platform-native sources first
+Uses Windows certificate stores, SCHANNEL configuration, IIS bindings, and standard TLS handshakes.
 
-Actionable output
-Produces structured data and a prioritized backlog suitable for engineering and security planning.
+Preparation, not compliance
+Findings represent inventory and prioritization signals, not audit results.
 
-Scope (Step 1)
-Windows Cryptographic Inventory
+Conservative claims
+Avoids overpromising PQC guarantees or timelines.
 
-The toolkit collects cryptographic metadata locally using PowerShell and native Windows interfaces.
-
-Collected data includes:
-
-Certificate stores
-
-LocalMachine and CurrentUser
-
-Subject, Issuer, Thumbprint
-
-Public key algorithm and key size
-
-Signature hash algorithm
-
-Enhanced Key Usage (EKU)
-
-Validity period
-
-TLS posture (SCHANNEL)
-
-Enabled protocol versions (coarse)
-
-Cipher suite policy (if configured)
-
-IIS bindings (when IIS is installed)
-
-HTTPS bindings and associated certificate thumbprints
-
-WinRM listeners
-
-HTTP and HTTPS listener configuration
-
-Windows OpenSSH posture (when installed)
-
-Host key configuration (best-effort inspection)
-
-All collection is read-only.
-
-Out of Scope
-
-This repository does not:
-
-Implement post-quantum cryptography
-
-Modify system configuration
-
-Perform vulnerability exploitation
-
-Scan networks or endpoints remotely
-
-Claim quantum resistance or compliance
-
-It is intentionally scoped to inventory and prioritization.
-
-Repository Structure (Step 1)
-
-The repository is organized to clearly separate documentation, configuration, collection scripts, schemas, and generated outputs.
-
+Repository Structure
 pqc-readiness-kit/
+├─ README.md
+├─ LICENSE
+├─ docs/
+│  ├─ README.md
+│  ├─ methodology.md
+│  ├─ threat-model.md
+│  └─ pqc-readiness-playbook.md
+├─ configs/
+│  ├─ targets.example.yml
+│  ├─ scoring.example.yml
+│  └─ tls_targets.example.json
+├─ scripts/
+│  ├─ pwsh/
+│  │  ├─ Invoke-CryptoInventory.ps1
+│  │  ├─ Collect-WindowsCerts.ps1
+│  │  ├─ Collect-TlsConfig.ps1
+│  │  ├─ Collect-IISBindings.ps1
+│  │  ├─ Collect-WinRMListeners.ps1
+│  │  └─ Collect-OpenSSHConfig.ps1
+│  └─ python/
+│     ├─ scan_tls.py
+│     ├─ build_report.py
+│     └─ README.md
+├─ schema/
+│  └─ crypto_inventory.schema.json
+├─ samples/
+│  ├─ README.md
+│  └─ sample_outputs/
+└─ reports/
+   ├─ README.md
+   └─ .gitkeep
 
-docs/
+Step 1: Windows Cryptographic Inventory
 
-methodology.md
+The PowerShell inventory collects cryptographic metadata from a Windows host, including:
 
-threat-model.md
+Certificate stores (LocalMachine and CurrentUser)
 
-pqc-readiness-playbook.md
+Public-key algorithms and key sizes (best-effort)
 
-configs/
+Signature hash algorithms
 
-targets.example.yml
+TLS protocol posture (SCHANNEL)
 
-scoring.example.yml
+IIS HTTPS bindings (optional)
 
-scripts/
+WinRM listeners (optional)
 
-pwsh/
-
-Invoke-CryptoInventory.ps1
-
-Collect-WindowsCerts.ps1
-
-Collect-TlsConfig.ps1
-
-Collect-IISBindings.ps1
-
-Collect-WinRMListeners.ps1
-
-Collect-OpenSSHConfig.ps1
-
-schema/
-
-crypto_inventory.schema.json
-
-reports/
-
-.gitkeep
-
-Execution Model
-
-All commands are executed from the repository root.
-
-The repository contains:
-
-PowerShell collection scripts
-
-Configuration files
-
-Documentation and schemas
-
-It does not include:
-
-Scheduled tasks
-
-Orchestration wrappers
-
-CI/CD pipelines
-
-Step 1 — Run Windows Cryptographic Inventory
-Prerequisites
-
-PowerShell 7.x recommended
-
-YAML support available (ConvertFrom-Yaml)
-
-Local administrative access improves coverage but is not strictly required
+Windows OpenSSH configuration (optional)
 
 Configuration
 
-Create working configuration files by copying the examples:
+Create local config files from the provided examples:
 
-configs/targets.example.yml → configs/targets.yml
+configs\targets.yml
 
-configs/scoring.example.yml → configs/scoring.yml
+configs\scoring.yml
 
-Adjust values to reflect your environment and risk tolerance.
+Example files are committed; local versions are ignored by Git.
 
-Execute Inventory
+Run the inventory
 
-Run the inventory from the repository root:
+From the repository root:
 
-pwsh -File .\scripts\pwsh\Invoke-CryptoInventory.ps1 `
+.\scripts\pwsh\Invoke-CryptoInventory.ps1 `
   -TargetsConfig .\configs\targets.yml `
   -ScoringConfig .\configs\scoring.yml `
   -OutputPath .\reports `
@@ -189,38 +113,87 @@ pwsh -File .\scripts\pwsh\Invoke-CryptoInventory.ps1 `
 
 Outputs
 
-The following artifacts are generated under the reports directory:
+reports\crypto_inventory.json
+Full structured cryptographic inventory
 
-crypto_inventory.json
-Complete structured cryptographic inventory.
+reports\findings.csv
+Prioritized backlog derived from hygiene and PQC relevance scoring
 
-findings.csv
-Prioritized remediation backlog suitable for sorting and filtering.
+Generated outputs are runtime artifacts and should not be committed.
 
-Scoring Overview
+Optional: TLS Endpoint Scan (Read-Only)
 
-Scoring is configurable and intentionally conservative:
+The toolkit includes a Python-based TLS scanner for externally reachable services.
 
-Presence of public-key cryptography (RSA, ECC, DH) increases post-quantum relevance
+It collects:
 
-Weak or deprecated cryptography increases urgency
+Negotiated TLS protocol version
 
-Expired or near-expiry certificates increase priority
+Cipher suite and key exchange metadata
 
-Long-lived confidentiality requirements raise overall risk
+Certificate validity and signature algorithm
 
-All thresholds and weights are defined in configs/scoring.yml.
+It does not perform cipher enumeration, downgrade attempts, or active probing.
 
-Security Considerations
+Input format
 
-Read-only execution
+Example input file:
 
-No credentials stored
+configs\tls_targets.example.json
 
-No secrets collected
+Create a local tls_targets.json for testing (ignored by Git).
 
-Suitable for regulated and audited environments
+Run the TLS scan
+
+From the repository root:
+
+python .\scripts\python\scan_tls.py --targets .\configs\tls_targets.json --out .\reports\tls_scan.json
+
+Optional: Report Builder (Stub)
+
+A report builder entry point exists to combine inventory artifacts into shareable outputs.
+
+The current implementation:
+
+Validates inputs
+
+Establishes output structure
+
+Writes a stub file only
+
+It does not yet generate HTML or CSV reports.
+
+Run from the repository root:
+
+python .\scripts\python\build_report.py `
+  --inventory .\reports\crypto_inventory.json `
+  --tls-scan .\reports\tls_scan.json `
+  --out-dir .\reports
+
+Documentation
+
+Supporting documentation lives under docs/:
+
+Methodology — how data is collected and interpreted
+
+Threat Model — scope and assumptions around quantum risk
+
+PQC Readiness Playbook — practical next steps for planning
+
+Start with docs/README.md for an overview.
+
+What This Toolkit Is Not
+
+A vulnerability scanner
+
+A compliance or audit tool
+
+A post-quantum cryptography implementation
+
+A guarantee against future cryptographic compromise
+
+It is a preparation and visibility tool.
 
 License
 
-Select an open-source license appropriate for your intended distribution. MIT and Apache 2.0 are commonly used for tooling repositories.
+MIT License. See LICENSE for details.
