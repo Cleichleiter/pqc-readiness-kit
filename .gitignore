@@ -5,6 +5,8 @@ reports/*
 # Local working configs (keep examples committed)
 configs/targets.yml
 configs/scoring.yml
+reports/tls_scan.json
+
 
 # Python artifacts (if added later)
 __pycache__/
