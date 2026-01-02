@@ -1,0 +1,4 @@
+[
+  { "host": "example.com", "port": 443 },
+  { "host": "www.cloudflare.com", "port": 443 }
+]

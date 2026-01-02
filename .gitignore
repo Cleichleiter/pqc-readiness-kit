@@ -6,6 +6,8 @@ reports/*
 configs/targets.yml
 configs/scoring.yml
 reports/tls_scan.json
+configs/tls_targets.json
+
 
 
 # Python artifacts (if added later)
