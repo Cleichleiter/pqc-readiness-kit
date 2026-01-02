@@ -1,222 +1,300 @@
 Methodology
 
+Purpose
 
 
-This document describes the collection approach, data sources, and interpretation logic used by the pqc-readiness-kit.
 
+The pqc-readiness-kit is an automation-first toolkit designed to help organizations inventory cryptographic dependencies and prioritize post-quantum cryptography (PQC) readiness efforts.
 
 
-The goal of this toolkit is to provide a defensible, repeatable cryptographic inventory that supports post-quantum readiness planning without altering system configuration or introducing operational risk.
 
+This project does not attempt to implement or enforce PQC algorithms. Instead, it focuses on discovery, classification, and decision support.
 
 
-Guiding Principles
 
+Quantum readiness is a data and dependency problem before it is a cryptography problem.
 
 
-Read-only collection
 
-All data is gathered without modifying system state.
+Scope
 
 
 
-Native data sources
+This toolkit addresses three core questions:
 
-Wherever possible, inventory is derived from Windows-native APIs, certificate providers, and registry configuration.
 
 
+Where is cryptography used across systems and services?
 
-Best-effort posture assessment
 
-Some cryptographic properties vary by provider and platform. The toolkit captures what is reliably available and avoids unsafe assumptions.
 
+Which cryptographic mechanisms are quantum-relevant?
 
 
-Preparation, not enforcement
 
-Findings represent inventory and prioritization signals, not compliance assertions.
+Which dependencies require near-term action based on exposure and data longevity?
 
 
 
-Data Sources
+Discovery Approach
 
-Certificate Inventory
+Endpoint and Server Inventory (Windows)
 
 
 
-Certificates are collected from the following stores:
+The toolkit performs read-only discovery of:
 
 
 
-LocalMachine\\My
+Certificate stores (machine and user)
 
 
 
-LocalMachine\\Root
+Key algorithm
 
 
 
-LocalMachine\\CA
+Key size
 
 
 
-CurrentUser\\My
+Signature hash
 
 
 
-For each certificate, the toolkit records:
+EKU
 
 
 
-Subject and Issuer
+Expiry
 
 
 
-Thumbprint and Serial Number
+TLS configuration
 
 
 
-Validity period
+Enabled protocol versions
 
 
 
-Public key algorithm and key size (best-effort)
+Cipher suite policy
 
 
 
-Signature hash algorithm
+Service bindings
 
 
 
-Enhanced Key Usage (EKU)
+IIS HTTPS bindings
 
 
 
-Private key presence indicator
+WinRM listeners
 
 
 
-Key size detection is performed using multiple fallback methods to support different cryptographic providers and PowerShell versions.
+RDP TLS posture
 
 
 
-TLS Configuration (SCHANNEL)
+SSH configuration
 
 
 
-TLS posture is inferred from registry configuration under:
+Key types and algorithms (Windows OpenSSH)
 
 
 
-HKLM\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\SCHANNEL\\Protocols
+No cryptographic material is exported or modified.
 
 
 
-The toolkit records protocol enablement for both client and server roles when present.
+Network-Facing TLS Discovery (Optional)
 
 
 
-Cipher suite policy is captured from Group Policy configuration if defined. Absence of a policy does not imply insecure defaults; it indicates that system defaults are in use.
+TLS endpoint scanning performs certificate-only inspection:
 
 
 
-IIS Bindings
+Certificate chain metadata
 
 
 
-When IIS is installed and management tools are available, the toolkit enumerates site bindings to identify:
+Public key algorithm and size
 
 
 
-HTTPS endpoints
+Expiration dates
 
 
 
-Certificate thumbprints associated with bindings
+Supported protocol versions (coarse)
 
 
 
-SNI and SSL flag configuration (when accessible)
+The scanner avoids active exploitation techniques and aggressive probing.
 
 
 
-This data is used to correlate certificates with externally exposed services.
+Quantum Relevance Classification
 
 
 
-WinRM Listeners
+The toolkit uses technology-class classification, not speculative attack timelines.
 
 
 
-WinRM listener configuration is captured using read-only enumeration. Listener data is preserved in raw form to avoid misinterpretation across Windows versions and policy configurations.
+Quantum-Relevant (Public-Key)
 
 
 
-Windows OpenSSH
+RSA
 
 
 
-When the OpenSSH Server feature is present, the toolkit performs a best-effort inspection of sshd\_config to capture:
+ECC (ECDSA, ECDH)
 
 
 
-Host key declarations
+Diffie-Hellman
 
 
 
-Explicit algorithm constraints, if configured
+These algorithms are vulnerable to Shor’s algorithm in a sufficiently capable quantum environment.
 
 
 
-The toolkit does not attempt to validate runtime key material or active sessions.
+Quantum-Resistant (Symmetric / Hash)
 
 
 
-Interpretation Notes
+AES
 
 
 
-Absence of data does not imply absence of cryptography
+SHA-2 / SHA-3
 
-Some services rely on implicit defaults or dynamically negotiated parameters.
 
 
+These remain viable with adjusted key sizes under Grover’s algorithm.
 
-Key size values may be null
 
-This occurs when providers do not expose size information in a consistent manner. Null values are preserved rather than guessed.
 
+Risk Factors Considered
 
 
-Inventory does not equal vulnerability
 
-Findings identify where cryptography exists, not whether it is exploitable.
+Findings are prioritized using the following signals:
 
 
 
-Intended Use
+Exposure
 
 
 
-This methodology supports:
+Internet-facing vs internal
 
 
 
-Cryptographic hygiene assessment
+Cryptographic hygiene
 
 
 
-Post-quantum migration planning
+Weak key sizes
 
 
 
-Asset and dependency discovery
+Deprecated hash algorithms
 
 
 
-Engineering backlog prioritization
+Legacy protocol support
 
 
 
-It is not intended to replace formal cryptographic validation or compliance audits.
+Data longevity
+
+
+
+Long-lived confidentiality requirements
+
+
+
+Operational coupling
+
+
+
+Hard-coded or vendor-embedded crypto
+
+
+
+The output is a prioritized remediation backlog, not a compliance score.
+
+
+
+Outputs
+
+
+
+The toolkit generates:
+
+
+
+crypto\_inventory.json
+
+Canonical machine-readable inventory
+
+
+
+findings.csv
+
+Sortable remediation backlog
+
+
+
+report.html
+
+Executive and engineering-friendly summary
+
+
+
+Safety and Operational Guidance
+
+
+
+Read-only by default
+
+
+
+No credential storage
+
+
+
+Supports least-privilege execution
+
+
+
+Intended for environments you own or are authorized to assess
+
+
+
+Limitations
+
+
+
+Does not assess PQC algorithm implementations
+
+
+
+Does not replace vendor cryptographic roadmaps
+
+
+
+Does not determine quantum timelines
+
+
+
+The toolkit is a planning accelerator, not a cryptographic enforcement mechanism.
 
