@@ -3,10 +3,17 @@
 build_report.py
 
 Minimal report generator for PQC readiness.
-Generates a basic HTML summary from crypto inventory data and optional TLS scan results.
+Generates:
+- report.html (basic HTML summary)
+- report_summary.csv (flat metrics export for exec / backlog tooling)
+
+Inputs:
+- crypto_inventory.json (required)
+- tls_scan.json (optional)
 """
 
 import argparse
+import csv
 import json
 from pathlib import Path
 from datetime import datetime
@@ -23,6 +30,17 @@ def safe_str(value: Any) -> str:
     if value is None:
         return ""
     return str(value)
+
+
+def parse_iso_datetime(value: str) -> Optional[datetime]:
+    """
+    Best-effort ISO datetime parsing.
+    PowerShell JSON output is typically ISO 8601; if not, we skip.
+    """
+    try:
+        return datetime.fromisoformat(value)
+    except Exception:
+        return None
 
 
 def main() -> None:
@@ -50,9 +68,15 @@ def main() -> None:
 
     inventory = read_json(inventory_path)
 
-    certs = inventory.get("artifacts", {}).get("certificates", [])
+    host = inventory.get("host", {}) or {}
+    host_name = host.get("computerName")
+    os_caption = host.get("osCaption")
+    os_version = host.get("osVersion")
+
+    certs = inventory.get("artifacts", {}).get("certificates", []) or []
 
     now = datetime.utcnow()
+
     counts_by_algo: Dict[str, int] = {}
     expired = 0
     expiring_30 = 0
@@ -63,19 +87,26 @@ def main() -> None:
 
         not_after = c.get("NotAfter")
         if not_after:
-            try:
-                na = datetime.fromisoformat(not_after)
+            na = parse_iso_datetime(not_after)
+            if na:
                 if na < now:
                     expired += 1
                 elif (na - now).days <= 30:
                     expiring_30 += 1
-            except Exception:
-                pass
+
+    # TLS metrics (optional)
+    tls_total = 0
+    tls_success = 0
+    tls_fail = 0
 
     # Build TLS table rows (if present)
     tls_section_html = ""
     if tls_results is not None:
-        rows = []
+        tls_total = len(tls_results)
+        tls_success = sum(1 for r in tls_results if r.get("success") is True)
+        tls_fail = tls_total - tls_success
+
+        rows: List[str] = []
         for r in tls_results:
             host = r.get("host")
             port = r.get("port")
@@ -83,6 +114,8 @@ def main() -> None:
             protocol = r.get("protocol")
             cipher_suite = r.get("cipher_suite")
             cert = r.get("certificate") or {}
+
+            # Our scan_tls.py uses not_after / not_before keys
             cert_not_after = cert.get("not_after") or cert.get("notAfter")
             err = r.get("error")
 
@@ -113,6 +146,7 @@ def main() -> None:
 </table>
 """
 
+    # HTML report
     html = f"""
 <!DOCTYPE html>
 <html>
@@ -132,8 +166,8 @@ def main() -> None:
 <h1>PQC Readiness Summary</h1>
 
 <p><strong>Generated:</strong> {inventory.get("generatedAtUtc")}</p>
-<p><strong>Host:</strong> {inventory.get("host", {}).get("computerName")}</p>
-<p><strong>OS:</strong> {inventory.get("host", {}).get("osCaption")} ({inventory.get("host", {}).get("osVersion")})</p>
+<p><strong>Host:</strong> {safe_str(host_name)}</p>
+<p><strong>OS:</strong> {safe_str(os_caption)} ({safe_str(os_version)})</p>
 
 <h2>Certificate Inventory Overview</h2>
 
@@ -142,12 +176,13 @@ def main() -> None:
     <th>Public Key Algorithm</th>
     <th>Count</th>
   </tr>
-  {''.join(f"<tr><td>{k}</td><td>{v}</td></tr>" for k, v in counts_by_algo.items())}
+  {''.join(f"<tr><td>{safe_str(k)}</td><td>{v}</td></tr>" for k, v in counts_by_algo.items())}
 </table>
 
 <h2>Hygiene Signals</h2>
 
 <ul>
+  <li>Total certificates: {len(certs)}</li>
   <li>Expired certificates: {expired}</li>
   <li>Certificates expiring within 30 days: {expiring_30}</li>
 </ul>
@@ -164,7 +199,34 @@ def main() -> None:
     with report_path.open("w", encoding="utf-8") as f:
         f.write(html)
 
+    # CSV summary export
+    summary_rows: List[Dict[str, str]] = []
+    summary_rows.append({"Metric": "GeneratedAtUtc", "Value": safe_str(inventory.get("generatedAtUtc"))})
+    summary_rows.append({"Metric": "Host.ComputerName", "Value": safe_str(host_name)})
+    summary_rows.append({"Metric": "Host.OSCaption", "Value": safe_str(os_caption)})
+    summary_rows.append({"Metric": "Host.OSVersion", "Value": safe_str(os_version)})
+
+    summary_rows.append({"Metric": "Certificates.Total", "Value": str(len(certs))})
+    summary_rows.append({"Metric": "Certificates.Expired", "Value": str(expired)})
+    summary_rows.append({"Metric": "Certificates.ExpiringWithin30Days", "Value": str(expiring_30)})
+
+    # Stable-ish ordering for algo metrics
+    for algo in sorted(counts_by_algo.keys(), key=lambda x: (x is None, str(x).lower())):
+        summary_rows.append({"Metric": f"Certificates.ByAlgorithm.{algo}", "Value": str(counts_by_algo[algo])})
+
+    summary_rows.append({"Metric": "TLSScan.Provided", "Value": "true" if tls_results is not None else "false"})
+    summary_rows.append({"Metric": "TLSScan.EndpointsTotal", "Value": str(tls_total)})
+    summary_rows.append({"Metric": "TLSScan.Success", "Value": str(tls_success)})
+    summary_rows.append({"Metric": "TLSScan.Fail", "Value": str(tls_fail)})
+
+    summary_path = out_dir / "report_summary.csv"
+    with summary_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["Metric", "Value"])
+        writer.writeheader()
+        writer.writerows(summary_rows)
+
     print(f"Wrote: {report_path}")
+    print(f"Wrote: {summary_path}")
 
 
 if __name__ == "__main__":
