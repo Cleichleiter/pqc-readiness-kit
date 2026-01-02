@@ -1,0 +1,5 @@
+Severity,Category,Title,Asset,Evidence,Recommendation
+High,Certificate Hygiene,Expired certificate detected,EXAMPLE-SERVER01,Certificate CN=legacy-app.internal expired on 2024-01-01,Replace certificate and remove SHA-1 usage
+High,Cryptographic Strength,Weak public key size detected,EXAMPLE-SERVER01,RSA key size 1024 is below recommended minimum,Reissue certificate with RSA 2048 or stronger
+Medium,Post-Quantum Exposure,Public-key cryptography used for TLS,EXAMPLE-SERVER01,TLS endpoints rely on RSA key exchange,Track vendor PQC roadmap and plan crypto-agile migration
+Low,Configuration Hygiene,Multiple certificates present in LocalMachine store,EXAMPLE-SERVER01,Multiple unused certificates detected,Review and remove unused certificates

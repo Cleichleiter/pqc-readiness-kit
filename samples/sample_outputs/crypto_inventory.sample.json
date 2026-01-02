@@ -1,0 +1,43 @@
+{
+  "generatedAtUtc": "2026-01-01T23:15:00Z",
+  "host": {
+    "computerName": "EXAMPLE-SERVER01",
+    "osCaption": "Microsoft Windows Server 2022 Datacenter",
+    "osVersion": "10.0.20348"
+  },
+  "artifacts": {
+    "certificates": [
+      {
+        "StoreLocation": "LocalMachine",
+        "StoreName": "My",
+        "Subject": "CN=example.internal",
+        "Issuer": "CN=Example Internal CA",
+        "Thumbprint": "AA11BB22CC33DD44EE55FF6677889900AABBCCDD",
+        "PublicKeyAlgorithm": "RSA",
+        "PublicKeySize": 2048,
+        "SignatureAlgorithm": "sha256RSA",
+        "NotBefore": "2024-01-01T00:00:00",
+        "NotAfter": "2026-01-01T00:00:00",
+        "EnhancedKeyUsage": [
+          "Server Authentication",
+          "Client Authentication"
+        ]
+      },
+      {
+        "StoreLocation": "LocalMachine",
+        "StoreName": "My",
+        "Subject": "CN=legacy-app.internal",
+        "Issuer": "CN=Legacy Issuing CA",
+        "Thumbprint": "11223344556677889900AABBCCDDEEFF00112233",
+        "PublicKeyAlgorithm": "RSA",
+        "PublicKeySize": 1024,
+        "SignatureAlgorithm": "sha1RSA",
+        "NotBefore": "2018-01-01T00:00:00",
+        "NotAfter": "2024-01-01T00:00:00",
+        "EnhancedKeyUsage": [
+          "Server Authentication"
+        ]
+      }
+    ]
+  }
+}
